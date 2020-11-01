@@ -20,6 +20,7 @@ namespace Brenner.SilentCmd
         /// </summary>
         public int Execute(string[] args)
         {
+            string debugText = "";
             try
             {
                 _config.ParseArguments(args);
@@ -41,7 +42,6 @@ namespace Brenner.SilentCmd
                     command = _config.BatchFileArguments;
                     launcher = _config.BatchFilePath;
                 }
-                //else if (!File.Exists(_configfile)) return 1; // configuration does not exist and file not a BAT = fail
                 else if (_config.BatchFilePath.ToLower().EndsWith(".py"))
                 {
                     var proc = new Process
@@ -77,21 +77,19 @@ namespace Brenner.SilentCmd
 
                     proc.Start();
                     launcher = proc.StandardOutput.ReadLine();
-                    if (!File.Exists(launcher)) 
+                    if (!File.Exists(launcher))
                         if (!File.Exists(@"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"))
                             launcher = "";
+                        else launcher = @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe";
                     command = $"-file \"{_config.BatchFilePath}\" {_config.BatchFileArguments}";
                 }
-                // "G:\nocmdtest\pytest.py" BLAH FU BAR /LOG:log.txt
-                // "G:\nocmdtest\battest.bat" BLAH FU BAR /LOG:log.txt
-                // "G:\nocmdtest\pstest.ps1" BLAH FU BAR /LOG:log.txt
-                // powershell -file "G:\\nocmdtest\\pstest.ps1" BLAH FU BAR
                 else
                 {
                     _logWriter.WriteLine(Resources.Error, $"File type launcher not configured: {_config.BatchFilePath}");
                     File.AppendAllText(_debugLogFile,
                         $"Timestamp   : {DateTime.Now}{Environment.NewLine}" +
-                        $"Unsupported : {_config.BatchFilePath}");
+                        $"Unsupported : {_config.BatchFilePath}" +
+                        $"{Environment.NewLine}{Environment.NewLine}");
                 }
 
                 if (launcher == "")
@@ -99,7 +97,8 @@ namespace Brenner.SilentCmd
                     _logWriter.WriteLine(Resources.Error, $"Unable to find launcher for file type: {_config.BatchFilePath}");
                     File.AppendAllText(_debugLogFile,
                         $"Timestamp : {DateTime.Now}{Environment.NewLine}" +
-                        $"Error     : {_config.BatchFilePath}");
+                        $"Error     : {_config.BatchFilePath}" +
+                        $"{Environment.NewLine}{Environment.NewLine}");
                     return 2;
                 }
 
@@ -115,32 +114,32 @@ namespace Brenner.SilentCmd
                         CreateNoWindow = true,
                         WorkingDirectory = Path.GetDirectoryName(_config.BatchFilePath)
                     };
-                    File.AppendAllText(_debugLogFile,
+                    debugText = 
                         $"Timestamp : {DateTime.Now}{Environment.NewLine}" +
                         $"Filename  : {process.StartInfo.FileName}{Environment.NewLine}" +
                         $"Arguments : {process.StartInfo.Arguments}{Environment.NewLine}" +
-                        $"Directory : {process.StartInfo.WorkingDirectory}");
+                        $"Directory : {process.StartInfo.WorkingDirectory}";
                     process.OutputDataReceived += OutputHandler;
                     process.ErrorDataReceived += OutputHandler;
                     process.Start();
                     process.BeginOutputReadLine();
                     process.WaitForExit();
+                    debugText += $"{Environment.NewLine}Exit code : {process.ExitCode}";
                     return process.ExitCode;
                 }
             }
             catch (Exception e)
             {
                 _logWriter.WriteLine(Resources.Error, e.Message);
-                File.AppendAllText(_debugLogFile,
-                    $"{Environment.NewLine}Exception : {e.Message}");
+                debugText += $"{Environment.NewLine}Exception : {e.Message}";
                 return 1;
             }
             finally
             {
                 _logWriter.WriteLine(Resources.FinishedCommand, _config.BatchFilePath);
                 _logWriter.Dispose();
-                File.AppendAllText(_debugLogFile, 
-                    $"{Environment.NewLine}{Environment.NewLine}");                
+                debugText += $"{Environment.NewLine}{Environment.NewLine}";
+                File.AppendAllText(_debugLogFile, debugText);
             }
         }
 
@@ -205,3 +204,8 @@ namespace Brenner.SilentCmd
         }
     }
 }
+
+// "G:\nocmdtest\pytest.py" BLAH FU BAR /LOG:log.txt
+// "G:\nocmdtest\battest.bat" BLAH FU BAR /LOG:log.txt
+// "G:\nocmdtest\pstest.ps1" BLAH FU BAR /LOG:log.txt
+// powershell -file "G:\\nocmdtest\\pstest.ps1" BLAH FU BAR
