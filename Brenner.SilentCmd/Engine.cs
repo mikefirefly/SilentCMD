@@ -87,8 +87,8 @@ namespace Brenner.SilentCmd
                 {
                     _logWriter.WriteLine(Resources.Error, $"File type launcher not configured: {_config.BatchFilePath}");
                     File.AppendAllText(_debugLogFile,
-                        $"Timestamp   : {DateTime.Now}{Environment.NewLine}" +
-                        $"Unsupported : {_config.BatchFilePath}" +
+                        $"Timestamp : {DateTime.Now}{Environment.NewLine}" +
+                        $"Typeerror : {_config.BatchFilePath}" +
                         $"{Environment.NewLine}{Environment.NewLine}");
                 }
 
@@ -97,8 +97,7 @@ namespace Brenner.SilentCmd
                     _logWriter.WriteLine(Resources.Error, $"Unable to find launcher for file type: {_config.BatchFilePath}");
                     File.AppendAllText(_debugLogFile,
                         $"Timestamp : {DateTime.Now}{Environment.NewLine}" +
-                        $"Error     : {_config.BatchFilePath}" +
-                        $"{Environment.NewLine}{Environment.NewLine}");
+                        $"Typeerror : {_config.BatchFilePath}");
                     return 2;
                 }
 
