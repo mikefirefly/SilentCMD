@@ -13,7 +13,7 @@ namespace Brenner.SilentCmd
     {
         private Configuration _config = new Configuration();
         private readonly LogWriter _logWriter = new LogWriter();
-        private readonly string _configfile = Process.GetCurrentProcess().MainModule.FileName.Replace(".exe", ".txt");// Process.GetCurrentProcess().ProcessName + ".txt";
+        private readonly string _debugLogFile = Process.GetCurrentProcess().MainModule.FileName.Replace(".exe", ".log");
 
         /// <summary>
         /// Executes the batch file defined in the arguments
@@ -77,19 +77,30 @@ namespace Brenner.SilentCmd
 
                     proc.Start();
                     launcher = proc.StandardOutput.ReadLine();
-                    if (!File.Exists(launcher)) launcher = "";
+                    if (!File.Exists(launcher)) 
+                        if (!File.Exists(@"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"))
+                            launcher = "";
                     command = $"-file \"{_config.BatchFilePath}\" {_config.BatchFileArguments}";
                 }
                 // "G:\nocmdtest\pytest.py" BLAH FU BAR /LOG:log.txt
                 // "G:\nocmdtest\battest.bat" BLAH FU BAR /LOG:log.txt
                 // "G:\nocmdtest\pstest.ps1" BLAH FU BAR /LOG:log.txt
                 // powershell -file "G:\\nocmdtest\\pstest.ps1" BLAH FU BAR
-                else _logWriter.WriteLine(Resources.Error, $"File type launcher not configured: {_config.BatchFilePath}");
+                else
+                {
+                    _logWriter.WriteLine(Resources.Error, $"File type launcher not configured: {_config.BatchFilePath}");
+                    File.AppendAllText(_debugLogFile,
+                        $"Timestamp   : {DateTime.Now}{Environment.NewLine}" +
+                        $"Unsupported : {_config.BatchFilePath}");
+                }
 
                 if (launcher == "")
                 {
                     _logWriter.WriteLine(Resources.Error, $"Unable to find launcher for file type: {_config.BatchFilePath}");
-                    return 5;
+                    File.AppendAllText(_debugLogFile,
+                        $"Timestamp : {DateTime.Now}{Environment.NewLine}" +
+                        $"Error     : {_config.BatchFilePath}");
+                    return 2;
                 }
 
                 _logWriter.WriteLine(Resources.StartingCommand, _config.BatchFilePath);
@@ -104,8 +115,11 @@ namespace Brenner.SilentCmd
                         CreateNoWindow = true,
                         WorkingDirectory = Path.GetDirectoryName(_config.BatchFilePath)
                     };
-                    File.AppendAllText(Process.GetCurrentProcess().MainModule.FileName.Replace(".exe", ".log"),
-                        $"Timestamp : {DateTime.Now}{Environment.NewLine}Filename  : {process.StartInfo.FileName}{Environment.NewLine}Arguments : {process.StartInfo.Arguments}\nDirectory : {process.StartInfo.WorkingDirectory}{Environment.NewLine}{Environment.NewLine}");
+                    File.AppendAllText(_debugLogFile,
+                        $"Timestamp : {DateTime.Now}{Environment.NewLine}" +
+                        $"Filename  : {process.StartInfo.FileName}{Environment.NewLine}" +
+                        $"Arguments : {process.StartInfo.Arguments}{Environment.NewLine}" +
+                        $"Directory : {process.StartInfo.WorkingDirectory}");
                     process.OutputDataReceived += OutputHandler;
                     process.ErrorDataReceived += OutputHandler;
                     process.Start();
@@ -117,12 +131,16 @@ namespace Brenner.SilentCmd
             catch (Exception e)
             {
                 _logWriter.WriteLine(Resources.Error, e.Message);
+                File.AppendAllText(_debugLogFile,
+                    $"{Environment.NewLine}Exception : {e.Message}");
                 return 1;
             }
             finally
             {
                 _logWriter.WriteLine(Resources.FinishedCommand, _config.BatchFilePath);
                 _logWriter.Dispose();
+                File.AppendAllText(_debugLogFile, 
+                    $"{Environment.NewLine}{Environment.NewLine}");                
             }
         }
 
