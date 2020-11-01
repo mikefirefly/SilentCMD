@@ -75,7 +75,7 @@ namespace Brenner.SilentCmd
 
             if (argumentsBuilder.Length > 0)
             {
-                BatchFileArguments = argumentsBuilder.ToString();
+                BatchFileArguments = argumentsBuilder.ToString().Trim();
             }
         }
     }

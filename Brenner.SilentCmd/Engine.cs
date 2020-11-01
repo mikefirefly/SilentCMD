@@ -13,7 +13,8 @@ namespace Brenner.SilentCmd
     {
         private Configuration _config = new Configuration();
         private readonly LogWriter _logWriter = new LogWriter();
-        
+        private readonly string _configfile = Process.GetCurrentProcess().MainModule.FileName.Replace(".exe", ".txt");// Process.GetCurrentProcess().ProcessName + ".txt";
+
         /// <summary>
         /// Executes the batch file defined in the arguments
         /// </summary>
@@ -33,17 +34,78 @@ namespace Brenner.SilentCmd
                 DelayIfNecessary();
                 ResolveBatchFilePath();
 
+                string launcher = "", command = "";
+
+                if (_config.BatchFilePath.ToLower().EndsWith(".bat") || _config.BatchFilePath.ToLower().EndsWith(".cmd"))
+                {
+                    command = _config.BatchFileArguments;
+                    launcher = _config.BatchFilePath;
+                }
+                //else if (!File.Exists(_configfile)) return 1; // configuration does not exist and file not a BAT = fail
+                else if (_config.BatchFilePath.ToLower().EndsWith(".py"))
+                {
+                    var proc = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = "/c where python",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            CreateNoWindow = true
+                        }
+                    };
+
+                    proc.Start();
+                    launcher = proc.StandardOutput.ReadLine();
+                    if (!File.Exists(launcher)) launcher = "";
+                    command = $"\"{_config.BatchFilePath}\" {_config.BatchFileArguments}";
+                }
+                else if (_config.BatchFilePath.ToLower().EndsWith(".ps1"))
+                {
+                    var proc = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = "/c where powershell",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            CreateNoWindow = true
+                        }
+                    };
+
+                    proc.Start();
+                    launcher = proc.StandardOutput.ReadLine();
+                    if (!File.Exists(launcher)) launcher = "";
+                    command = $"-file \"{_config.BatchFilePath}\" {_config.BatchFileArguments}";
+                }
+                // "G:\nocmdtest\pytest.py" BLAH FU BAR /LOG:log.txt
+                // "G:\nocmdtest\battest.bat" BLAH FU BAR /LOG:log.txt
+                // "G:\nocmdtest\pstest.ps1" BLAH FU BAR /LOG:log.txt
+                // powershell -file "G:\\nocmdtest\\pstest.ps1" BLAH FU BAR
+                else _logWriter.WriteLine(Resources.Error, $"File type launcher not configured: {_config.BatchFilePath}");
+
+                if (launcher == "")
+                {
+                    _logWriter.WriteLine(Resources.Error, $"Unable to find launcher for file type: {_config.BatchFilePath}");
+                    return 5;
+                }
+
                 _logWriter.WriteLine(Resources.StartingCommand, _config.BatchFilePath);
 
                 using (var process = new Process())
                 {
-                    process.StartInfo = new ProcessStartInfo(_config.BatchFilePath, _config.BatchFileArguments)
+                    process.StartInfo = new ProcessStartInfo(launcher, command)
                     {
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,   // CreateNoWindow only works, if shell is not used
-                        CreateNoWindow = true
+                        CreateNoWindow = true,
+                        WorkingDirectory = Path.GetDirectoryName(_config.BatchFilePath)
                     };
+                    File.AppendAllText(Process.GetCurrentProcess().MainModule.FileName.Replace(".exe", ".log"),
+                        $"Timestamp : {DateTime.Now}{Environment.NewLine}Filename  : {process.StartInfo.FileName}{Environment.NewLine}Arguments : {process.StartInfo.Arguments}\nDirectory : {process.StartInfo.WorkingDirectory}{Environment.NewLine}{Environment.NewLine}");
                     process.OutputDataReceived += OutputHandler;
                     process.ErrorDataReceived += OutputHandler;
                     process.Start();
@@ -60,7 +122,7 @@ namespace Brenner.SilentCmd
             finally
             {
                 _logWriter.WriteLine(Resources.FinishedCommand, _config.BatchFilePath);
-                _logWriter.Dispose();                
+                _logWriter.Dispose();
             }
         }
 
