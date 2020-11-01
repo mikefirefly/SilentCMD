@@ -45,5 +45,6 @@ You can call SilentCMD without parameters if required (e.g. when double-clicking
 ```
 
 ### mikefirefly update
-- Adds support for Powershell (PS1) and Python (PY) scripts. Path to the appropriate launcher (powershell.exe / python.exe) is determined at runtime.
-- An extra log is now always created in the program home directory. It contains launch context (StartInfo parameters) for debug purposes.
+- Working directory is now always script's directory
+- Adds support for Powershell (PS1) and Python (PY) scripts. Path to the appropriate launcher (powershell.exe / python.exe) is determined at runtime
+- An extra log is now always created in the program home directory. It contains launch context (StartInfo parameters) for debug purposes
