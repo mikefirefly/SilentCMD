@@ -30,7 +30,6 @@ namespace Brenner.SilentCmd
             var batchFilePathWasRead = false;
             string argValue;
 
-            //if (args)
             foreach (string arg in args)
             {
                 if (ArgumentParser.TryGetValue(arg, "/LOG+", out argValue))
@@ -74,9 +73,7 @@ namespace Brenner.SilentCmd
                 argumentsBuilder.AppendFormat("{0} ", arg);
             }
 
-            if (argumentsBuilder.Length > 0)
-                BatchFileArguments = argumentsBuilder.ToString().Trim();
-            else ShowHelp = true;
+            if (argumentsBuilder.Length > 0) BatchFileArguments = argumentsBuilder.ToString().Trim();
         }
     }
 }

@@ -32,6 +32,9 @@ namespace Brenner.SilentCmd
                     return 0;
                 }
 
+                if (args.Length == 0)
+                    ShowHelp();
+
                 DelayIfNecessary();
                 ResolveBatchFilePath();
 
@@ -203,8 +206,3 @@ namespace Brenner.SilentCmd
         }
     }
 }
-
-// "G:\nocmdtest\pytest.py" BLAH FU BAR /LOG:log.txt
-// "G:\nocmdtest\battest.bat" BLAH FU BAR /LOG:log.txt
-// "G:\nocmdtest\pstest.ps1" BLAH FU BAR /LOG:log.txt
-// powershell -file "G:\\nocmdtest\\pstest.ps1" BLAH FU BAR
