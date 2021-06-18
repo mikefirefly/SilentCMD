@@ -134,7 +134,13 @@ SilentCMD c:\MyBatch.cmd /DELAY:3600 /LOG+:c:\MyLog.txt
 
 Version {0}
 Free software under MIT license
-More information on https://www.stephan-brenner.com</value>
+More information on https://www.stephan-brenner.com
+---
+mikefirefly's update
+
+- adds support for Powershell (PS1) and Python (PY) scripts. Path to the appropriate launcher (powershell.exe / python.exe) is determined at runtime
+- working directory is now always script's directory
+- an extra log is now always created in the program home directory. It contains launch context (StartInfo parameters) for debug purposes</value>
   </data>
   <data name="ProgramTitle" xml:space="preserve">
     <value>SilentCMD</value>
